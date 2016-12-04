@@ -8,6 +8,7 @@ pygame.init()
 class Game(object):
     def __init__(self):
         self.done = False
+        self.is_game_over = False
         self.gameDisplay = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
         self.snake = Snake()
@@ -20,15 +21,15 @@ class Game(object):
         self.score = 0
 
     def draw(self):
+        self.frame_count += 1
         self.gameDisplay.fill((255, 255, 255))
+        self.clock.tick_busy_loop(30)
         self.snake.draw(self.gameDisplay)
         self.all_sprites_group.draw(self.gameDisplay)
         pygame.display.flip()
-        self.frame_count += 1
-        self.clock.tick(30)
 
     def update(self):
-        if self.frame_count == 8:
+        if self.frame_count == 4:
             self.snake.create_new_piece(self.next_direction)
             self.frame_count = 0
         self.snake.update(self.next_direction)
@@ -40,16 +41,20 @@ class Game(object):
         if fruit_collision:
             self.score += self.fruit.get_point_value()
             self.snake.max_size += 1
-            print("score is: " + str(self.score))
             self.all_sprites_group.remove(self.fruit)
             self.fruit = Fruit(16 * random.randint(1, 15), 16 * random.randint(1, 15))
             self.all_sprites_group.add(self.fruit)
+
+        head_collision = self.snake.check_collision()
+        if head_collision:
+            self.done = True
 
     def set_next_direction(self, param):
         # snake cannot reverse direction
         if ((self.snake.current_direction() == 3 or self.snake.current_direction() == 4) and param in (1, 2)) or (
                     (self.snake.current_direction() == 1 or self.snake.current_direction() == 2) and param in (3, 4)):
             self.next_direction = param
+
 
 # create colors
 white = (255, 255, 255)

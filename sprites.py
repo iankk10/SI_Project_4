@@ -9,7 +9,10 @@ from math import pi
 
 class Snake(object):
     def __init__(self):
-        self.pieces_group = pygame.sprite.Group()
+        # inactive group is all pieces we can collide with
+        self.inactive_group = pygame.sprite.Group()
+        # active group includes first two pieces since you cannot collide with them
+        self.active_group = pygame.sprite.Group()
         self.pieces_deque = deque()
         self.max_size = 5
         self.add_piece(SnakePiece(2, 0, 0))
@@ -17,12 +20,20 @@ class Snake(object):
 
     def add_piece(self, piece):
         """ Add a piece to the front of the snake """
+        if len(self.active_group) < 2:
+            # less than 2 active pieces, add the new piece to active group
+            self.active_group.add(piece)
+        elif len(self.active_group) == 2:
+            # we have 2 pieces, need to remove the second
+            current_second = self.pieces_deque[1]
+            self.active_group.remove(current_second)
+            self.inactive_group.add(current_second)
         self.pieces_deque.appendleft(piece)
-        self.pieces_group.add(piece)
+        self.active_group.add(piece)
         # if we have more than our max size, remove the last piece of the snake
         if len(self.pieces_deque) > self.max_size:
             piece_to_remove = self.pieces_deque.pop()
-            self.pieces_group.remove(piece_to_remove)
+            self.inactive_group.remove(piece_to_remove)
 
     def is_snake_full(self):
         return len(self.pieces_deque) == self.max_size
@@ -36,9 +47,23 @@ class Snake(object):
     def update(self, next_direction):
         self.next_direction = next_direction
         self.get_active_piece().update()
+        # need to animate last piece if we're at max size
+        if len(self.pieces_deque) == self.max_size:
+            second_to_last = self.pieces_deque[-2]
+            last = self.pieces_deque[-1]
+            direction = second_to_last.direction
+            if direction == 1:
+                last.rect = last.rect.move(-4, 0)
+            elif direction == 2:
+                last.rect = last.rect.move(4, 0)
+            elif direction == 3:
+                last.rect = last.rect.move(0, -4)
+            else:
+                last.rect = last.rect.move(0, 4)
 
     def draw(self, surface: pygame.Surface):
-        self.pieces_group.draw(surface)
+        self.inactive_group.draw(surface)
+        self.active_group.draw(surface)
 
     def get_pieces(self):
         return self.pieces_deque
@@ -50,6 +75,10 @@ class Snake(object):
 
     def current_direction(self):
         return self.get_active_piece().direction
+
+    def check_collision(self):
+        head_collision = pygame.sprite.groupcollide(self.active_group, self.inactive_group, False, False)
+        return head_collision
 
 
 class SnakePiece(pygame.sprite.Sprite):
@@ -67,16 +96,16 @@ class SnakePiece(pygame.sprite.Sprite):
         self.progress = 0
 
     def update(self):
-        if self.progress < 8:
+        if self.progress < 4:
             self.progress += 1
             if self.direction == 1:
-                self.rect = self.rect.move(-2, 0)
+                self.rect = self.rect.move(-4, 0)
             elif self.direction == 2:
-                self.rect = self.rect.move(2, 0)
+                self.rect = self.rect.move(4, 0)
             elif self.direction == 3:
-                self.rect = self.rect.move(0, -2)
+                self.rect = self.rect.move(0, -4)
             else:
-                self.rect = self.rect.move(0, 2)
+                self.rect = self.rect.move(0, 4)
 
 
 class Fruit(pygame.sprite.Sprite):
