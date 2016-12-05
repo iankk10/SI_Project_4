@@ -3,8 +3,6 @@ import sys
 import os
 import random
 from collections import deque
-from pygame import gfxdraw
-from math import pi
 
 
 class Snake(object):
@@ -14,8 +12,8 @@ class Snake(object):
         # active group includes first two pieces since you cannot collide with them
         self.active_group = pygame.sprite.Group()
         self.pieces_deque = deque()
-        self.max_size = 5
-        self.add_piece(SnakePiece(2, 0, 0))
+        self.max_size = 45
+        self.add_piece(SnakePiece(2, 40, 12))
         self.next_direction = 2
 
     def add_piece(self, piece):
@@ -124,3 +122,13 @@ class Fruit(pygame.sprite.Sprite):
 class GhostFruit(Fruit):
     def get_point_value(self):
         return -10
+
+
+class Wall(pygame.sprite.Sprite):
+    def __init__(self, rect_x, rect_y, surface_width, surface_height):
+        super().__init__()
+        self.image = pygame.Surface([surface_width, surface_height])
+        self.image.fill((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = rect_x
+        self.rect.y = rect_y

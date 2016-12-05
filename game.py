@@ -9,23 +9,34 @@ class Game(object):
     def __init__(self):
         self.done = False
         self.is_game_over = False
-        self.gameDisplay = pygame.display.set_mode((800, 600))
+        self.game_display = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
         self.snake = Snake()
         self.collision_group = pygame.sprite.Group()
-        self.fruit = Fruit(16 * random.randint(1, 15), 16 * random.randint(1, 15))
+        self.fruit = Fruit(40 + (16 * random.randint(1, 15)), 12 + (16 * random.randint(1, 15)))
         self.all_sprites_group = pygame.sprite.Group()
         self.all_sprites_group.add(self.fruit)
+        # build walls
+        self.wall_group = pygame.sprite.Group()
+        # top
+        self.wall_group.add(Wall(36, 8, 726, 4))
+        # left
+        self.wall_group.add(Wall(36, 8, 4, 406))
+        # right
+        self.wall_group.add(Wall(760, 8, 4, 408))
+        # bottom
+        self.wall_group.add(Wall(36, 412, 726, 4))
         self.frame_count = 0
         self.next_direction = 2
         self.score = 0
 
     def draw(self):
         self.frame_count += 1
-        self.gameDisplay.fill((255, 255, 255))
+        self.game_display.fill((255, 255, 255))
         self.clock.tick_busy_loop(30)
-        self.snake.draw(self.gameDisplay)
-        self.all_sprites_group.draw(self.gameDisplay)
+        self.snake.draw(self.game_display)
+        self.all_sprites_group.draw(self.game_display)
+        self.wall_group.draw(self.game_display)
         pygame.display.flip()
 
     def update(self):
@@ -42,11 +53,15 @@ class Game(object):
             self.score += self.fruit.get_point_value()
             self.snake.max_size += 1
             self.all_sprites_group.remove(self.fruit)
-            self.fruit = Fruit(16 * random.randint(1, 15), 16 * random.randint(1, 15))
+            self.fruit = Fruit(40 + (16 * random.randint(1, 15)), 12 + (16 * random.randint(1, 15)))
             self.all_sprites_group.add(self.fruit)
 
         head_collision = self.snake.check_collision()
         if head_collision:
+            self.done = True
+
+        wall_collision = pygame.sprite.spritecollide(self.snake.get_active_piece(), self.wall_group, False, False)
+        if wall_collision:
             self.done = True
 
     def set_next_direction(self, param):
@@ -71,10 +86,9 @@ y_delta = 0
 clock = pygame.time.Clock()
 
 # create a surface
-# gameDisplay = pygame.display.set_mode((800, 600))  # initialize with a tuple
 
 game = Game()
-pygame.display.set_caption("Frames per second")
+pygame.display.set_caption("Snake")
 pygame.display.update()  # only updates portion specified
 # default moving right
 while not game.done:
