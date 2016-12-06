@@ -11,6 +11,10 @@ OFFSET_X = 48
 OFFSET_Y = 20
 BOO_SOUND = pygame.mixer.Sound(os.path.join(sys.path[0],
                                             "sounds", "boo.wav"))
+FRUIT_EAT_SOUND = pygame.mixer.Sound(os.path.join(sys.path[0],
+                                                  "sounds", "fruit_eat.wav"))
+GHOST_EAT_SOUND = pygame.mixer.Sound(os.path.join(sys.path[0],
+                                                  "sounds", "ghost_eat.wav"))
 
 
 class Snake(object):
@@ -154,6 +158,10 @@ class Fruit(pygame.sprite.Sprite):
     def get_size_value(self):
         return 1
 
+    @staticmethod
+    def play_eat_sound():
+        FRUIT_EAT_SOUND.play()
+
 
 class GhostFruit(Fruit):
     def __init__(self, x, y):
@@ -184,6 +192,10 @@ class GhostFruit(Fruit):
 
     def get_size_value(self):
         return 5
+
+    @staticmethod
+    def play_eat_sound():
+        GHOST_EAT_SOUND.play()
 
 
 class Wall(pygame.sprite.Sprite):
