@@ -1,34 +1,49 @@
 import pygame
 from sprites import *
 import random
+from math import hypot
 
 pygame.init()
 
 
 class Game(object):
+    """ Init the Game object with a Snake on a 45x25 board and a piece of fruit """
+
     def __init__(self):
         self.done = False
         self.is_game_over = False
         self.game_display = pygame.display.set_mode((800, 600))
         self.clock = pygame.time.Clock()
+        self.positions = set((x, y) for x in range(0, 44) for y in range(0, 24))
         self.snake = Snake()
+        self.snake.create_new_piece(2, self.positions)
         self.collision_group = pygame.sprite.Group()
-        self.fruit = Fruit(40 + (16 * random.randint(1, 15)), 12 + (16 * random.randint(1, 15)))
+        random_position = random.sample(self.positions, 1)[0]
+        self.fruit = Game.create_new_fruit(OFFSET_X + (16 * random_position[0]), OFFSET_Y + (16 * random_position[1]))
         self.all_sprites_group = pygame.sprite.Group()
         self.all_sprites_group.add(self.fruit)
         # build walls
         self.wall_group = pygame.sprite.Group()
         # top
-        self.wall_group.add(Wall(36, 8, 726, 4))
+        self.wall_group.add(Wall(44, 16, 710, 4))
         # left
-        self.wall_group.add(Wall(36, 8, 4, 406))
+        self.wall_group.add(Wall(44, 16, 4, 390))
         # right
-        self.wall_group.add(Wall(760, 8, 4, 408))
+        self.wall_group.add(Wall(752, 16, 4, 392))
         # bottom
-        self.wall_group.add(Wall(36, 412, 726, 4))
+        self.wall_group.add(Wall(44, 404, 710, 4))
         self.frame_count = 0
         self.next_direction = 2
         self.score = 0
+
+    @staticmethod
+    def create_new_fruit(x, y):
+        rand = random.randint(1, 10)
+        # 20% to be ghost fruit
+        if rand <= 2:
+            return GhostFruit(x, y)
+        else:
+            return Fruit(x, y)
 
     def draw(self):
         self.frame_count += 1
@@ -40,29 +55,42 @@ class Game(object):
         pygame.display.flip()
 
     def update(self):
-        if self.frame_count == 4:
-            self.snake.create_new_piece(self.next_direction)
-            self.frame_count = 0
-        self.snake.update(self.next_direction)
         # check for collisions
         self.check_for_collisions()
+
+        # normal game loop
+        if not self.is_game_over:
+            if self.frame_count == 4:
+                self.snake.create_new_piece(self.next_direction, self.positions)
+                self.frame_count = 0
+            self.snake.update(self.next_direction)
+            # updates fruit, checks if we need a new one if it's a GhostFruit
+            need_new_fruit = self.fruit.update(self.snake.get_active_piece().rect)
+            if need_new_fruit:
+                self.all_sprites_group.remove(self.fruit)
+                random_position = random.sample(self.positions, 1)[0]
+                self.fruit = Game.create_new_fruit(OFFSET_X + (16 * random_position[0]),
+                                                   OFFSET_Y + (16 * random_position[1]))
+                self.all_sprites_group.add(self.fruit)
 
     def check_for_collisions(self):
         fruit_collision = pygame.sprite.collide_rect(self.snake.get_active_piece(), self.fruit)
         if fruit_collision:
             self.score += self.fruit.get_point_value()
-            self.snake.max_size += 1
+            self.snake.max_size += self.fruit.get_size_value()
             self.all_sprites_group.remove(self.fruit)
-            self.fruit = Fruit(40 + (16 * random.randint(1, 15)), 12 + (16 * random.randint(1, 15)))
+            random_position = random.sample(self.positions, 1)[0]
+            self.fruit = Game.create_new_fruit(OFFSET_X + (16 * random_position[0]),
+                                               OFFSET_Y + (16 * random_position[1]))
             self.all_sprites_group.add(self.fruit)
 
         head_collision = self.snake.check_collision()
         if head_collision:
-            self.done = True
+            self.is_game_over = True
 
         wall_collision = pygame.sprite.spritecollide(self.snake.get_active_piece(), self.wall_group, False, False)
         if wall_collision:
-            self.done = True
+            self.is_game_over = True
 
     def set_next_direction(self, param):
         # snake cannot reverse direction

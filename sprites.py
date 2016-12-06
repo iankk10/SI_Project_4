@@ -1,8 +1,16 @@
-import pygame
+import pygame.mixer
 import sys
 import os
 import random
 from collections import deque
+from math import hypot
+
+pygame.mixer.init()
+
+OFFSET_X = 48
+OFFSET_Y = 20
+BOO_SOUND = pygame.mixer.Sound(os.path.join(sys.path[0],
+                                            "sounds", "boo.wav"))
 
 
 class Snake(object):
@@ -12,11 +20,11 @@ class Snake(object):
         # active group includes first two pieces since you cannot collide with them
         self.active_group = pygame.sprite.Group()
         self.pieces_deque = deque()
-        self.max_size = 45
-        self.add_piece(SnakePiece(2, 40, 12))
+        self.max_size = 10
         self.next_direction = 2
+        self.is_first_piece = True
 
-    def add_piece(self, piece):
+    def add_piece(self, piece, board_positions):
         """ Add a piece to the front of the snake """
         if len(self.active_group) < 2:
             # less than 2 active pieces, add the new piece to active group
@@ -31,18 +39,24 @@ class Snake(object):
         # if we have more than our max size, remove the last piece of the snake
         if len(self.pieces_deque) > self.max_size:
             piece_to_remove = self.pieces_deque.pop()
+            board_positions.add(piece_to_remove.position)
             self.inactive_group.remove(piece_to_remove)
 
     def is_snake_full(self):
+        """ Checks if the snake length is at capacity """
         return len(self.pieces_deque) == self.max_size
 
     def get_active_piece(self):
+        """ Gets the currently active (front) snake piece """
         return self.pieces_deque[0]
 
     def get_last_piece(self):
+        """ Gets the last piece in the current snake"""
         return self.pieces_deque[-1]
 
     def update(self, next_direction):
+        """ Updates the snake, moving the active piece in the current direction, as well as takes input for the next
+            direction """
         self.next_direction = next_direction
         self.get_active_piece().update()
         # need to animate last piece if we're at max size
@@ -60,16 +74,22 @@ class Snake(object):
                 last.rect = last.rect.move(0, 4)
 
     def draw(self, surface: pygame.Surface):
+        """ Draws the snake """
         self.inactive_group.draw(surface)
         self.active_group.draw(surface)
 
     def get_pieces(self):
+        """ Gets all pieces in the snake """
         return self.pieces_deque
 
-    def create_new_piece(self, next_direction):
-        active_piece = self.get_active_piece()
-        new_piece = SnakePiece(next_direction, active_piece.rect.x, active_piece.rect.y)
-        self.add_piece(new_piece)
+    def create_new_piece(self, next_direction, board_positions):
+        if self.is_first_piece:
+            self.is_first_piece = False
+            new_piece = SnakePiece(2, OFFSET_X, OFFSET_Y)
+        else:
+            active_piece = self.get_active_piece()
+            new_piece = SnakePiece(next_direction, active_piece.rect.x, active_piece.rect.y)
+        self.add_piece(new_piece, board_positions)
 
     def current_direction(self):
         return self.get_active_piece().direction
@@ -92,6 +112,16 @@ class SnakePiece(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.progress = 0
+        # Sets the final position on the board of the snake. Since we start in the previous position and animate out,
+        # this is necessary
+        if self.direction == 1:  # LEFT
+            self.position = (int((x - OFFSET_X - 16) / 16), int((y - OFFSET_Y) / 16))
+        elif self.direction == 2:  # RIGHT
+            self.position = (int((x - OFFSET_X + 16) / 16), int((y - OFFSET_Y) / 16))
+        elif self.direction == 3:  # UP
+            self.position = (int((x - OFFSET_X) / 16), int((y - OFFSET_Y - 16) / 16))
+        else:  # DOWN
+            self.position = (int((x - OFFSET_X) / 16), int((y - OFFSET_Y + 16) / 16))
 
     def update(self):
         if self.progress < 4:
@@ -118,10 +148,42 @@ class Fruit(pygame.sprite.Sprite):
     def get_point_value(self):
         return 10
 
+    def update(self, snake_rect):
+        return False
+
+    def get_size_value(self):
+        return 1
+
 
 class GhostFruit(Fruit):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.ghost_image = pygame.image.load(
+            os.path.join(sys.path[0], "images", "ghost" + str(random.randint(1, 4)) + ".gif")).convert()
+        self.revealed = False
+        self.active_frames = 0
+
     def get_point_value(self):
         return -10
+
+    def update(self, snake_rect):
+        if self.revealed:
+            self.active_frames += 1
+        else:
+            dist = hypot(self.rect.x - snake_rect.x, self.rect.y - snake_rect.y)
+            if dist < 48 and not self.revealed:
+                # play sound here
+                self.image = self.ghost_image
+                BOO_SOUND.play()
+                self.revealed = True
+
+        if self.active_frames == 32:
+            return True
+        else:
+            return False
+
+    def get_size_value(self):
+        return 5
 
 
 class Wall(pygame.sprite.Sprite):
