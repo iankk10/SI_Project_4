@@ -40,8 +40,12 @@ class Snake(object):
             self.inactive_group.add(current_second)
         self.pieces_deque.appendleft(piece)
         self.active_group.add(piece)
-        # remove the position of the new piece from the active options
-        board_positions.remove(piece.position)
+        # remove the position of the new piece from the active options, ignore the exception if we have a piece outside
+        # the board -- this happens when you hit a wall
+        try:
+            board_positions.remove(piece.position)
+        except KeyError as ignored:
+            pass
         # if we have more than our max size, remove the last piece of the snake
         if len(self.pieces_deque) > self.max_size:
             piece_to_remove = self.pieces_deque.pop()
