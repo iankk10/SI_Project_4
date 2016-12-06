@@ -7,7 +7,7 @@ from math import hypot
 
 pygame.mixer.init()
 
-OFFSET_X = 48
+OFFSET_X = 40
 OFFSET_Y = 20
 BOO_SOUND = pygame.mixer.Sound(os.path.join(sys.path[0],
                                             "sounds", "boo.wav"))
@@ -87,6 +87,7 @@ class Snake(object):
         return self.pieces_deque
 
     def create_new_piece(self, next_direction, board_positions):
+        """ Creates a new piece for the snake with a given direction, updating the available board positions """
         if self.is_first_piece:
             self.is_first_piece = False
             new_piece = SnakePiece(2, OFFSET_X, OFFSET_Y)
@@ -141,6 +142,8 @@ class SnakePiece(pygame.sprite.Sprite):
 
 
 class Fruit(pygame.sprite.Sprite):
+    """ Class for a normal piece of fruit. Eating one increases score by 10 and increases Snake max length by 1 """
+
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.image.load(
@@ -164,6 +167,10 @@ class Fruit(pygame.sprite.Sprite):
 
 
 class GhostFruit(Fruit):
+    """ Class for a Ghost Fruit disguised as a real fruit. Eating one will decrease score by 10 and increase snake size
+        by 5. Ghost Fruits appear as fruit until the snake is close to them, then they reveal as a ghost. If not eaten
+        for a short time after being revealed, the ghost will disappear. """
+
     def __init__(self, x, y):
         super().__init__(x, y)
         self.ghost_image = pygame.image.load(

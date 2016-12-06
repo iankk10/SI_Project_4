@@ -16,7 +16,7 @@ class Game(object):
         self.is_game_over = False
         self.game_display = pygame.display.set_mode((800, 450))
         self.clock = pygame.time.Clock()
-        self.positions = set((x, y) for x in range(0, 44) for y in range(0, 24))
+        self.positions = set((x, y) for x in range(0, 45) for y in range(0, 25))
         self.snake = Snake()
         self.snake.create_new_piece(2, self.positions)
         self.collision_group = pygame.sprite.Group()
@@ -27,13 +27,13 @@ class Game(object):
         # build walls
         self.wall_group = pygame.sprite.Group()
         # top
-        self.wall_group.add(Wall(44, 16, 710, 4))
+        self.wall_group.add(Wall(36, 16, 726, 4))
         # left
-        self.wall_group.add(Wall(44, 16, 4, 390))
+        self.wall_group.add(Wall(36, 16, 4, 406))
         # right
-        self.wall_group.add(Wall(752, 16, 4, 392))
+        self.wall_group.add(Wall(760, 16, 4, 408))
         # bottom
-        self.wall_group.add(Wall(44, 404, 710, 4))
+        self.wall_group.add(Wall(36, 420, 726, 4))
         self.frame_count = 0
         self.next_direction = 2
         self.score = 0
@@ -55,7 +55,7 @@ class Game(object):
         self.all_sprites_group.draw(self.game_display)
         self.wall_group.draw(self.game_display)
         score_text = FONT.render("Score: " + str(self.score), 1, (0, 0, 0))
-        self.game_display.blit(score_text, (60, 415))
+        self.game_display.blit(score_text, (60, 427))
 
         if self.is_game_over:
             game_over_text = GAME_OVER_FONT.render("GAME OVER", 1, (0, 0, 0))
@@ -120,7 +120,7 @@ class Game(object):
 
 
 game = Game()
-pygame.display.set_caption("Snake")
+pygame.display.set_caption("Snake vs Pacman Ghosts")
 pygame.display.update()  # only updates portion specified
 # default moving right
 while not game.done:
